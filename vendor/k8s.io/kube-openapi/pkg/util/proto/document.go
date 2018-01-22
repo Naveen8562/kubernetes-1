@@ -21,8 +21,8 @@ import (
 	"sort"
 	"strings"
 
-	openapi_v2 "github.com/googleapis/gnostic/OpenAPIv2"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/googleapis/gnostic/OpenAPIv2"
+	"gopkg.in/yaml.v2"
 )
 
 func newSchemaError(path *Path, format string, a ...interface{}) error {
@@ -126,12 +126,17 @@ func (d *Definitions) parseMap(s *openapi_v2.Schema, path *Path) (Schema, error)
 	if len(s.GetType().GetValue()) != 0 && s.GetType().GetValue()[0] != object {
 		return nil, newSchemaError(path, "invalid object type")
 	}
+	var sub Schema
 	if s.GetAdditionalProperties().GetSchema() == nil {
-		return nil, newSchemaError(path, "invalid object doesn't have additional properties")
-	}
-	sub, err := d.ParseSchema(s.GetAdditionalProperties().GetSchema(), path)
-	if err != nil {
-		return nil, err
+		sub = &Primitive{
+			Type: String,
+		}
+	} else {
+		var err error
+		sub, err = d.ParseSchema(s.GetAdditionalProperties().GetSchema(), path)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &Map{
 		BaseSchema: d.parseBaseSchema(s, path),
